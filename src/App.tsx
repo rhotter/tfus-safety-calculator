@@ -5,8 +5,8 @@ interface SafetyParams {
   pulseRepetitionRateKHz: number;
   frequencyMHz: number;
   cycles: number;
-  widthCm: number;
-  heightCm: number;
+  transducerWidthCm: number;
+  transducerHeightCm: number;
   pressureKPa: number;
 }
 
@@ -22,8 +22,8 @@ function App() {
     pulseRepetitionRateKHz: 5,
     frequencyMHz: 2,
     cycles: 2,
-    widthCm: 3,
-    heightCm: 1.5,
+    transducerWidthCm: 3,
+    transducerHeightCm: 1.5,
     pressureKPa: 600,
   });
 
@@ -34,14 +34,14 @@ function App() {
     averageIntensityMWPerCm2: 0,
     transducerAreaCm2: 0,
     transducerPowerMW: 0,
-    ticDegC: 0,
+    tic: 0,
   });
 
   const calculateResults = (p: SafetyParams) => {
     // Constants
-    const speedOfSoundMPerS = 1500; // m/s
-    const densityKgPerM3 = 1000; // kg/m^3
-    const impedanceRayl = speedOfSoundMPerS * densityKgPerM3; // Rayl
+    const speedOfSoundMPerS = 1500;
+    const densityKgPerM3 = 1000;
+    const impedanceRayl = speedOfSoundMPerS * densityKgPerM3;
 
     // Step 1: Pulse duration (in seconds)
     const pulseDurationSec = p.cycles / (p.frequencyMHz * MHZ_TO_HZ);
@@ -63,12 +63,12 @@ function App() {
       ((intensityPerPulseWPerCm2 * dutyCyclePercent) / 100) * W_TO_MW;
 
     // Step 4: Transducer calculations
-    const transducerAreaCm2 = p.widthCm * p.heightCm; // cm²
-    const transducerPowerMW = averageIntensityMWPerCm2 * transducerAreaCm2; // mW
+    const transducerAreaCm2 = p.transducerWidthCm * p.transducerHeightCm;
+    const transducerPowerMW = averageIntensityMWPerCm2 * transducerAreaCm2;
 
     // Step 5: TIC calculation
-    const ticDegC =
-      transducerPowerMW / (C_CONSTANT_MW_PER_CM * transducerAreaCm2);
+    const tic =
+      transducerPowerMW / (C_CONSTANT_MW_PER_CM * p.transducerWidthCm);
 
     setResults({
       pulseDurationSec,
@@ -77,7 +77,7 @@ function App() {
       averageIntensityMWPerCm2,
       transducerAreaCm2,
       transducerPowerMW,
-      ticDegC,
+      tic,
     });
   };
 
@@ -168,8 +168,8 @@ function App() {
               </label>
               <input
                 type="number"
-                name="widthCm"
-                value={params.widthCm}
+                name="transducerWidthCm"
+                value={params.transducerWidthCm}
                 onChange={handleInputChange}
                 className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
               />
@@ -180,8 +180,8 @@ function App() {
               </label>
               <input
                 type="number"
-                name="heightCm"
-                value={params.heightCm}
+                name="transducerHeightCm"
+                value={params.transducerHeightCm}
                 onChange={handleInputChange}
                 className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
               />
@@ -240,14 +240,14 @@ function App() {
             <div>
               <h3 className="text-lg font-medium mb-2">Thermal Index (TIC)</h3>
               <div className="flex items-center mb-2">
-                {results.ticDegC < 3 ? (
+                {results.tic < 3 ? (
                   <CheckCircle className="text-green-500 w-6 h-6 mr-2" />
                 ) : (
                   <AlertTriangle className="text-red-500 w-6 h-6 mr-2" />
                 )}
                 <span>
-                  {results.ticDegC.toFixed(2)}°C (BMUS Limit: 3°C, ITRUSST
-                  Limit: 6°C)
+                  {results.tic.toFixed(2)}°C (BMUS Limit: 3°C, ITRUSST Limit:
+                  6°C)
                 </span>
               </div>
 
@@ -257,10 +257,9 @@ function App() {
                   <span className="font-medium">Maximum Exposure Times:</span>
                 </div>
                 <div className="ml-7 space-y-1">
-                  <p>BMUS: {getMaxExposureTime(results.ticDegC)} minutes</p>
+                  <p>BMUS: {getMaxExposureTime(results.tic)} minutes</p>
                   <p>
-                    ITRUSST: {getITRUSSTMaxExposureTime(results.ticDegC)}{" "}
-                    minutes
+                    ITRUSST: {getITRUSSTMaxExposureTime(results.tic)} minutes
                   </p>
                 </div>
               </div>
