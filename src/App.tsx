@@ -1,73 +1,83 @@
-import React, { useState, useEffect } from 'react';
-import { AlertTriangle, CheckCircle, Info } from 'lucide-react';
+import React, { useState, useEffect } from "react";
+import { AlertTriangle, CheckCircle, Info } from "lucide-react";
 
 interface SafetyParams {
-  pulseRepetitionRate: number;
-  frequency: number;
+  pulseRepetitionRateKHz: number;
+  frequencyMHz: number;
   cycles: number;
-  width: number;
-  height: number;
-  pressure: number;
+  widthCm: number;
+  heightCm: number;
+  pressureKPa: number;
 }
+
+const MHZ_TO_HZ = 1e6;
+const KHZ_TO_HZ = 1e3;
+const KPA_TO_PA = 1000;
+const CM2_TO_M2 = 1e-4; // 1 cm² = 1e-4 m²
+const W_TO_MW = 1000; // 1 W = 1000 mW
+const C_CONSTANT_MW_PER_CM = 40; // mW/cm constant for TIC calculation
 
 function App() {
   const [params, setParams] = useState<SafetyParams>({
-    pulseRepetitionRate: 5,
-    frequency: 2,
+    pulseRepetitionRateKHz: 5,
+    frequencyMHz: 2,
     cycles: 2,
-    width: 3,
-    height: 1.5,
-    pressure: 600
+    widthCm: 3,
+    heightCm: 1.5,
+    pressureKPa: 600,
   });
 
   const [results, setResults] = useState({
-    pulseDuration: 0,
-    dutyCycle: 0,
-    intensityPerPulse: 0,
-    averageIntensity: 0,
-    transducerArea: 0,
-    transducerPower: 0,
-    tic: 0
+    pulseDurationSec: 0,
+    dutyCyclePercent: 0,
+    intensityPerPulseWPerCm2: 0,
+    averageIntensityMWPerCm2: 0,
+    transducerAreaCm2: 0,
+    transducerPowerMW: 0,
+    ticDegC: 0,
   });
 
   const calculateResults = (p: SafetyParams) => {
     // Constants
-    const speedOfSound = 1500; // m/s
-    const density = 1000; // kg/m^3
-    const impedance = 1.5; // MRayl
+    const speedOfSoundMPerS = 1500; // m/s
+    const densityKgPerM3 = 1000; // kg/m^3
+    const impedanceRayl = speedOfSoundMPerS * densityKgPerM3; // Rayl
 
     // Step 1: Pulse duration (in seconds)
-    const pulseDuration = (p.cycles / (p.frequency * 1e6));
-    
+    const pulseDurationSec = p.cycles / (p.frequencyMHz * MHZ_TO_HZ);
+
     // Step 2: Duty cycle (as percentage)
-    const dutyCycle = pulseDuration * (p.pulseRepetitionRate * 1000) * 100;
-    
+    const dutyCyclePercent =
+      pulseDurationSec * (p.pulseRepetitionRateKHz * KHZ_TO_HZ) * 100;
+
     // Step 3: Intensity calculations
     // Convert pressure from kPa to Pa
-    const pressureInPa = p.pressure * 1000;
-    
+    const pressurePa = p.pressureKPa * KPA_TO_PA;
+
     // Calculate intensity per pulse (W/cm²)
-    const intensityPerPulse = (pressureInPa * pressureInPa) / (2 * density * speedOfSound) / 10000;
-    
+    const intensityPerPulseWPerCm2 =
+      ((pressurePa * pressurePa) / (2 * impedanceRayl)) * CM2_TO_M2;
+
     // Calculate average intensity (mW/cm²)
-    const averageIntensity = intensityPerPulse * dutyCycle / 100 * 1000;
-    
+    const averageIntensityMWPerCm2 =
+      ((intensityPerPulseWPerCm2 * dutyCyclePercent) / 100) * W_TO_MW;
+
     // Step 4: Transducer calculations
-    const transducerArea = p.width * p.height; // cm²
-    const transducerPower = averageIntensity * transducerArea; // mW
-    
+    const transducerAreaCm2 = p.widthCm * p.heightCm; // cm²
+    const transducerPowerMW = averageIntensityMWPerCm2 * transducerAreaCm2; // mW
+
     // Step 5: TIC calculation
-    // C constant is 40 mW/cm
-    const tic = transducerPower / (40 * transducerArea);
+    const ticDegC =
+      transducerPowerMW / (C_CONSTANT_MW_PER_CM * transducerAreaCm2);
 
     setResults({
-      pulseDuration,
-      dutyCycle,
-      intensityPerPulse,
-      averageIntensity,
-      transducerArea,
-      transducerPower,
-      tic
+      pulseDurationSec,
+      dutyCyclePercent,
+      intensityPerPulseWPerCm2,
+      averageIntensityMWPerCm2,
+      transducerAreaCm2,
+      transducerPowerMW,
+      ticDegC,
     });
   };
 
@@ -77,30 +87,32 @@ function App() {
 
   const getMaxExposureTime = (tic: number) => {
     // BMUS limits
-    if (tic <= 0.7) return 60;
-    if (tic <= 1) return 30;
-    if (tic <= 1.5) return 15;
-    if (tic <= 2) return 4;
-    if (tic <= 2.5) return 1;
+    if (tic <= 0.7) return Infinity;
+    if (tic <= 1) return 60;
+    if (tic <= 1.5) return 30;
+    if (tic <= 2) return 15;
+    if (tic <= 2.5) return 4;
+    if (tic <= 3) return 1;
     return 0;
   };
 
   const getITRUSSTMaxExposureTime = (tic: number) => {
     // ITRUSST limits
-    if (tic <= 1.5) return 80;
-    if (tic <= 2) return 40;
-    if (tic <= 2.5) return 10;
-    if (tic <= 3) return 2.67;
-    if (tic <= 4) return 0.67;
+    if (tic <= 1.5) return Infinity;
+    if (tic <= 2) return 80;
+    if (tic <= 2.5) return 40;
+    if (tic <= 3) return 10;
+    if (tic <= 4) return 2.67;
+    if (tic <= 4.5) return 0.67;
     if (tic <= 5) return 0.17;
     return 0;
   };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
-    setParams(prev => ({
+    setParams((prev) => ({
       ...prev,
-      [name]: parseFloat(value)
+      [name]: parseFloat(value),
     }));
   };
 
@@ -120,8 +132,8 @@ function App() {
               </label>
               <input
                 type="number"
-                name="pulseRepetitionRate"
-                value={params.pulseRepetitionRate}
+                name="pulseRepetitionRateKHz"
+                value={params.pulseRepetitionRateKHz}
                 onChange={handleInputChange}
                 className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
               />
@@ -132,8 +144,8 @@ function App() {
               </label>
               <input
                 type="number"
-                name="frequency"
-                value={params.frequency}
+                name="frequencyMHz"
+                value={params.frequencyMHz}
                 onChange={handleInputChange}
                 className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
               />
@@ -156,8 +168,8 @@ function App() {
               </label>
               <input
                 type="number"
-                name="width"
-                value={params.width}
+                name="widthCm"
+                value={params.widthCm}
                 onChange={handleInputChange}
                 className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
               />
@@ -168,8 +180,8 @@ function App() {
               </label>
               <input
                 type="number"
-                name="height"
-                value={params.height}
+                name="heightCm"
+                value={params.heightCm}
                 onChange={handleInputChange}
                 className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
               />
@@ -180,8 +192,8 @@ function App() {
               </label>
               <input
                 type="number"
-                name="pressure"
-                value={params.pressure}
+                name="pressureKPa"
+                value={params.pressureKPa}
                 onChange={handleInputChange}
                 className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
               />
@@ -191,34 +203,36 @@ function App() {
 
         <div className="bg-white rounded-lg shadow-lg p-6">
           <h2 className="text-xl font-semibold mb-4">Safety Analysis</h2>
-          
+
           <div className="space-y-6">
             <div className="border-b pb-4">
               <h3 className="text-lg font-medium mb-2">Peak Intensity Check</h3>
               <div className="flex items-center">
-                {results.intensityPerPulse < 190 ? (
+                {results.intensityPerPulseWPerCm2 < 190 ? (
                   <CheckCircle className="text-green-500 w-6 h-6 mr-2" />
                 ) : (
                   <AlertTriangle className="text-red-500 w-6 h-6 mr-2" />
                 )}
                 <span>
-                  {results.intensityPerPulse.toFixed(2)} W/cm² 
-                  (Limit: 190 W/cm²)
+                  {results.intensityPerPulseWPerCm2.toFixed(2)} W/cm² (Limit:
+                  190 W/cm²)
                 </span>
               </div>
             </div>
 
             <div className="border-b pb-4">
-              <h3 className="text-lg font-medium mb-2">Average Intensity Check</h3>
+              <h3 className="text-lg font-medium mb-2">
+                Average Intensity Check
+              </h3>
               <div className="flex items-center">
-                {results.averageIntensity < 720 ? (
+                {results.averageIntensityMWPerCm2 < 720 ? (
                   <CheckCircle className="text-green-500 w-6 h-6 mr-2" />
                 ) : (
                   <AlertTriangle className="text-red-500 w-6 h-6 mr-2" />
                 )}
                 <span>
-                  {results.averageIntensity.toFixed(2)} mW/cm² 
-                  (Limit: 720 mW/cm²)
+                  {results.averageIntensityMWPerCm2.toFixed(2)} mW/cm² (Limit:
+                  720 mW/cm²)
                 </span>
               </div>
             </div>
@@ -226,25 +240,28 @@ function App() {
             <div>
               <h3 className="text-lg font-medium mb-2">Thermal Index (TIC)</h3>
               <div className="flex items-center mb-2">
-                {results.tic < 3 ? (
+                {results.ticDegC < 3 ? (
                   <CheckCircle className="text-green-500 w-6 h-6 mr-2" />
                 ) : (
                   <AlertTriangle className="text-red-500 w-6 h-6 mr-2" />
                 )}
                 <span>
-                  {results.tic.toFixed(2)}°C
-                  (BMUS Limit: 3°C, ITRUSST Limit: 6°C)
+                  {results.ticDegC.toFixed(2)}°C (BMUS Limit: 3°C, ITRUSST
+                  Limit: 6°C)
                 </span>
               </div>
-              
+
               <div className="bg-gray-50 p-4 rounded-lg">
                 <div className="flex items-center mb-2">
                   <Info className="text-blue-500 w-5 h-5 mr-2" />
                   <span className="font-medium">Maximum Exposure Times:</span>
                 </div>
                 <div className="ml-7 space-y-1">
-                  <p>BMUS: {getMaxExposureTime(results.tic)} minutes</p>
-                  <p>ITRUSST: {getITRUSSTMaxExposureTime(results.tic)} minutes</p>
+                  <p>BMUS: {getMaxExposureTime(results.ticDegC)} minutes</p>
+                  <p>
+                    ITRUSST: {getITRUSSTMaxExposureTime(results.ticDegC)}{" "}
+                    minutes
+                  </p>
                 </div>
               </div>
             </div>
