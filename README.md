@@ -42,7 +42,3 @@ TIC = \frac{W_0/D_{eq}}{C_{TIC}}
 $$
 
 where $W_0$ is the output power of our transducer in mW, $D_{eq}$ is the diameter of the transducer in cm, $C_{TIC} = 40 \text{ mW/cm}$ is the power per unit length needed to raise the temperature of bone by 1 degree celcius.
-
-[Ultrasound safety in more detail](https://www.notion.so/Ultrasound-safety-in-more-detail-1ace75ced07980418767cf8e9731fed9?pvs=21)
-
-### References
