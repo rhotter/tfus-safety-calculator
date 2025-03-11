@@ -251,15 +251,18 @@ function App() {
                 </span>
               </div>
 
-              <div className="bg-gray-50 p-4 rounded-lg">
+              <div className="!bg-red-50 p-4 rounded-lg">
                 <div className="flex items-center mb-2">
-                  <Info className="text-blue-500 w-5 h-5 mr-2" />
-                  <span className="font-medium">Maximum Exposure Times:</span>
+                  <Info className="text-red-600 w-5 h-5 mr-2" />
+                  <span className="text-red-600 font-medium">
+                    Maximum Exposure Times
+                  </span>
                 </div>
                 <div className="ml-7 space-y-1">
                   <p>BMUS: {getMaxExposureTime(results.tic)} minutes</p>
                   <p>
-                    ITRUSST: {getITRUSSTMaxExposureTime(results.tic)} minutes
+                    ITRUSST:
+                    {getITRUSSTMaxExposureTime(results.tic)} minutes
                   </p>
                 </div>
               </div>
