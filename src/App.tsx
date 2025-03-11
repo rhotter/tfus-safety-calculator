@@ -292,6 +292,17 @@ function App() {
             </div>
           </div>
         </div>
+
+        <div className="text-center mt-8 text-sm text-gray-500">
+          <a
+            href="https://github.com/rhotter/tfus-safety-calculator"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="hover:text-gray-700 hover:underline"
+          >
+            Source Code
+          </a>
+        </div>
       </div>
     </div>
   );
