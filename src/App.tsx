@@ -15,6 +15,7 @@ const KHZ_TO_HZ = 1e3;
 const KPA_TO_PA = 1000;
 const CM2_TO_M2 = 1e-4; // 1 cm² = 1e-4 m²
 const W_TO_MW = 1000; // 1 W = 1000 mW
+const KPA_TO_MPA = 1e-3;
 const C_CONSTANT_MW_PER_CM = 40; // mW/cm constant for TIC calculation
 
 function App() {
@@ -35,6 +36,7 @@ function App() {
     transducerAreaCm2: 0,
     transducerPowerMW: 0,
     tic: 0,
+    mechanicalIndex: 0,
   });
 
   const calculateResults = (p: SafetyParams) => {
@@ -70,6 +72,11 @@ function App() {
     const tic =
       transducerPowerMW / (C_CONSTANT_MW_PER_CM * p.transducerWidthCm);
 
+    // Step 6: Mechanical Index calculation (MI = p_min/sqrt(f))
+    // Using peak negative pressure (pressure) divided by square root of frequency
+    const mechanicalIndex =
+      (p.pressureKPa * KPA_TO_MPA) / Math.sqrt(p.frequencyMHz);
+
     setResults({
       pulseDurationSec,
       dutyCyclePercent,
@@ -78,6 +85,7 @@ function App() {
       transducerAreaCm2,
       transducerPowerMW,
       tic,
+      mechanicalIndex,
     });
   };
 
@@ -206,6 +214,20 @@ function App() {
 
           <div className="space-y-6">
             <div className="border-b pb-4">
+              <h3 className="text-lg font-medium mb-2">
+                Mechanical Index Check
+              </h3>
+              <div className="flex items-center">
+                {results.mechanicalIndex < 1.9 ? (
+                  <CheckCircle className="text-green-500 w-6 h-6 mr-2" />
+                ) : (
+                  <AlertTriangle className="text-red-500 w-6 h-6 mr-2" />
+                )}
+                <span>{results.mechanicalIndex.toFixed(2)} (Limit: 1.9)</span>
+              </div>
+            </div>
+
+            <div className="border-b pb-4">
               <h3 className="text-lg font-medium mb-2">Peak Intensity Check</h3>
               <div className="flex items-center">
                 {results.intensityPerPulseWPerCm2 < 190 ? (
@@ -238,7 +260,9 @@ function App() {
             </div>
 
             <div>
-              <h3 className="text-lg font-medium mb-2">Thermal Index (TIC)</h3>
+              <h3 className="text-lg font-medium mb-2">
+                Thermal Index (TIC) Check
+              </h3>
               <div className="flex items-center mb-2">
                 {results.tic < 3 ? (
                   <CheckCircle className="text-green-500 w-6 h-6 mr-2" />
@@ -261,8 +285,7 @@ function App() {
                 <div className="ml-7 space-y-1">
                   <p>BMUS: {getMaxExposureTime(results.tic)} minutes</p>
                   <p>
-                    ITRUSST:
-                    {getITRUSSTMaxExposureTime(results.tic)} minutes
+                    ITRUSST: {getITRUSSTMaxExposureTime(results.tic)} minutes
                   </p>
                 </div>
               </div>
