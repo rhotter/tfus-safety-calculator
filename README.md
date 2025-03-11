@@ -21,7 +21,13 @@ where $p_\text{min}$ is the peak rarefactional pressure in MPa, and $f$ is the f
 
 ### Thermal damage
 
-The FDA sets an average intensity limit of 720 mW/cm^2 and a per-pulse limit of 190 W/cm^2 intensity.
+The FDA sets an average intensity limit of 720 mW/cm^2 and a per-pulse limit of 190 W/cm^2 intensity. We can compute the intensity as
+
+$$
+I = \frac{p_{max}^2}{2 Z}
+$$
+
+where $p_{max}$ is the peak pressure and $Z$ is the acoustic impedance of tissue (1.5 MRayl).
 
 ### Thermal index
 
