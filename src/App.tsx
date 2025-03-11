@@ -298,7 +298,7 @@ function App() {
             href="https://github.com/rhotter/tfus-safety-calculator"
             target="_blank"
             rel="noopener noreferrer"
-            className="hover:text-gray-700 hover:underline"
+            className="hover:text-gray-700 underline"
           >
             Source Code
           </a>
