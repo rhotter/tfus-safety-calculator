@@ -23,8 +23,8 @@ function App() {
     pulseRepetitionRateKHz: 5,
     frequencyMHz: 2,
     cycles: 2,
-    transducerWidthCm: 3,
-    transducerHeightCm: 1.5,
+    transducerWidthCm: 2.87,
+    transducerHeightCm: 1.33,
     pressureKPa: 600,
   });
 
