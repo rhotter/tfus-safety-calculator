@@ -41,4 +41,4 @@ $$
 TIC = \frac{W_0/D_{eq}}{C_{TIC}}
 $$
 
-where $W_0$ is the output power of our transducer in mW, $D_{eq}=2*\sqrt{A/\pi}$ is the equivalent diameter of the focus at the skull in cm, $C_{TIC} = 40 \text{ mW/cm}$ is the power per unit length needed to raise the temperature of bone by 1 degree celcius.
+where $W_0$ is the output power of our transducer in mW, $D_{eq}=2 \sqrt{A/\pi}$ is the equivalent diameter of the focus at the skull in cm, $C_{TIC} = 40 \text{ mW/cm}$ is the power per unit length needed to raise the temperature of bone by 1 degree celcius.
