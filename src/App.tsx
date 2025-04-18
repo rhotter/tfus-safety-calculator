@@ -69,8 +69,10 @@ function App() {
     const transducerPowerMW = averageIntensityMWPerCm2 * transducerAreaCm2;
 
     // Step 5: TIC calculation
+    const equivalentDiameterCm =
+      2 * Math.sqrt((p.transducerWidthCm * p.transducerHeightCm) / Math.PI);
     const tic =
-      transducerPowerMW / (C_CONSTANT_MW_PER_CM * p.transducerWidthCm);
+      transducerPowerMW / (C_CONSTANT_MW_PER_CM * equivalentDiameterCm);
 
     // Step 6: Mechanical Index calculation (MI = p_min/sqrt(f))
     // Using peak negative pressure (pressure) divided by square root of frequency
