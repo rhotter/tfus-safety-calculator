@@ -25,7 +25,7 @@ function App() {
     cycles: 2,
     transducerWidthCm: 2.87,
     transducerHeightCm: 1.33,
-    pressureKPa: 600,
+    pressureKPa: 500,
   });
 
   const [results, setResults] = useState({
