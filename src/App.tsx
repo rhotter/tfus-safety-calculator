@@ -22,6 +22,8 @@ const W_TO_MW = 1000; // 1 W = 1000 mW
 const PA_TO_MPA = 1e-6;
 const C_CONSTANT_MW_PER_CM = 40; // mW/cm constant for TIC calculation
 const SPEED_OF_SOUND_M_PER_S = 1540; // Speed of sound in tissue (m/s)
+const DENSITY_KG_PER_M3 = 1000; // Density of tissue (kg/m³)
+const IMPEDANCE_RAYL = SPEED_OF_SOUND_M_PER_S * DENSITY_KG_PER_M3;
 const CM_TO_M = 0.01; // Conversion factor from cm to m
 
 function App() {
@@ -68,14 +70,56 @@ function App() {
     return (intensityPerPulseWPerCm2 * dutyCycle) * W_TO_MW;
   };
 
+  const calculateBeamAreaAtSkull = (
+    transducerWidthCm: number,
+    transducerHeightCm: number,
+    useElevationalFocusing: boolean,
+    elevationalFocalDepthCm: number,
+    useAzimuthalFocusing: boolean,
+    azimuthalFocalDepthCm: number
+  ): number => {
+    const skullDepthCm = 1; // 1 cm, including scalp (conservative)
+
+    if (skullDepthCm / elevationalFocalDepthCm < 0 || skullDepthCm / azimuthalFocalDepthCm < 0) {
+      throw new Error("Focal depth is too shallow. TODO: Implement diffraction-limited focusing.");
+    }
+
+    let areaFactor = 1;
+    // Apply elevational focusing (affects height)
+    if (useElevationalFocusing) {
+      areaFactor *= (1 - skullDepthCm / elevationalFocalDepthCm);
+    }
+
+    // Apply azimuthal focusing (affects width)
+    if (useAzimuthalFocusing) {
+      areaFactor *= (1 - skullDepthCm / azimuthalFocalDepthCm);
+    }
+
+    return transducerWidthCm * transducerHeightCm * areaFactor;
+  };
+
   const calculateThermalIndex = (
     transducerWidthCm: number,
     transducerHeightCm: number,
-    transducerAverageIntensityMWPerCm2: number
+    transducerAverageIntensityMWPerCm2: number,
+    useElevationalFocusing: boolean,
+    elevationalFocalDepthCm: number,
+    useAzimuthalFocusing: boolean,
+    azimuthalFocalDepthCm: number
   ): number => {
     const transducerAreaCm2 = transducerWidthCm * transducerHeightCm;
     const transducerPowerMW = transducerAverageIntensityMWPerCm2 * transducerAreaCm2;
-    const equivalentDiameterCm = 2 * Math.sqrt((transducerWidthCm * transducerHeightCm) / Math.PI);
+
+    const beamAreaAtSkullCm2 = calculateBeamAreaAtSkull(
+      transducerWidthCm,
+      transducerHeightCm,
+      useElevationalFocusing,
+      elevationalFocalDepthCm,
+      useAzimuthalFocusing,
+      azimuthalFocalDepthCm
+    );
+
+    const equivalentDiameterCm = 2 * Math.sqrt(beamAreaAtSkullCm2 / Math.PI);
     return transducerPowerMW / (C_CONSTANT_MW_PER_CM * equivalentDiameterCm);
   };
 
@@ -85,26 +129,16 @@ function App() {
   };
 
   const calculateResults = (p: SafetyParams) => {
-    // Constants
-    const speedOfSoundMPerS = 1500;
-    const densityKgPerM3 = 1000;
-    const impedanceRayl = speedOfSoundMPerS * densityKgPerM3;
-
-    // Step 1: Pulse duration
     const pulseDurationSec = p.cycles / (p.frequencyMHz * MHZ_TO_HZ);
-
-    // Step 2: Duty cycle (fraction between 0 and 1)
     const dutyCycle = pulseDurationSec * (p.pulseRepetitionRateKHz * KHZ_TO_HZ);
-
-    // Step 3: Calculate transducer intensity
     const transducerPressurePa = p.transducerPressureKPa * KPA_TO_PA;
-    const transducerIntensityPerPulseWPerCm2 = calculateIntensity(transducerPressurePa, impedanceRayl);
+    
+    const transducerIntensityPerPulseWPerCm2 = calculateIntensity(transducerPressurePa, IMPEDANCE_RAYL);
     const transducerAverageIntensityMWPerCm2 = calculateAverageIntensity(
       transducerIntensityPerPulseWPerCm2,
       dutyCycle
     );
 
-    // Step 4: Calculate brain pressure and intensity (with focusing)
     let brainPressurePa = transducerPressurePa;
 
     // Apply elevational focusing gain if enabled
@@ -125,22 +159,22 @@ function App() {
       );
     }
 
-    // Calculate brain intensity
-    const brainIntensityPerPulseWPerCm2 = calculateIntensity(brainPressurePa, impedanceRayl);
+    // Calculate intensity at focal spot
+    const brainIntensityPerPulseWPerCm2 = calculateIntensity(brainPressurePa, IMPEDANCE_RAYL);
     const brainAverageIntensityMWPerCm2 = calculateAverageIntensity(
       brainIntensityPerPulseWPerCm2,
       dutyCycle
     );
 
-
-    // Step 5: Calculate mechanical index
     const mechanicalIndex = calculateMechanicalIndex(brainPressurePa, p.frequencyMHz);
-
-    // Step 6: Calculate thermal index (TIC)
     const tic = calculateThermalIndex(
       p.transducerWidthCm,
       p.transducerHeightCm,
-      transducerAverageIntensityMWPerCm2
+      transducerAverageIntensityMWPerCm2,
+      p.useElevationalFocusing,
+      p.elevationalFocalDepthCm,
+      p.useAzimuthalFocusing,
+      p.azimuthalFocalDepthCm
     );
 
     setResults({
