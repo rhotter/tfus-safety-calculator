@@ -44,8 +44,6 @@ function App() {
     dutyCycle: 0,
     intensityPerPulseWPerCm2: 0,
     averageIntensityMWPerCm2: 0,
-    transducerAreaCm2: 0,
-    transducerPowerMW: 0,
     tic: 0,
     mechanicalIndex: 0,
   });
@@ -139,9 +137,6 @@ function App() {
     const mechanicalIndex = calculateMechanicalIndex(brainPressurePa, p.frequencyMHz);
 
     // Step 6: Calculate thermal index (TIC)
-    const transducerAreaCm2 = p.transducerWidthCm * p.transducerHeightCm;
-    const transducerPowerMW = transducerAverageIntensityMWPerCm2 * transducerAreaCm2;
-
     const tic = calculateThermalIndex(
       p.transducerWidthCm,
       p.transducerHeightCm,
@@ -153,8 +148,6 @@ function App() {
       dutyCycle,
       intensityPerPulseWPerCm2: brainIntensityPerPulseWPerCm2,
       averageIntensityMWPerCm2: brainAverageIntensityMWPerCm2,
-      transducerAreaCm2,
-      transducerPowerMW,
       tic,
       mechanicalIndex,
     });
