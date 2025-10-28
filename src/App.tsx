@@ -316,7 +316,7 @@ function App() {
                   onChange={handleInputChange}
                   className="mr-2 h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded cursor-pointer"
                 />
-                Enable Elevational Focusing
+                Elevational Focusing
               </label>
             </div>
             {params.useElevationalFocusing && (
@@ -346,7 +346,7 @@ function App() {
                   onChange={handleInputChange}
                   className="mr-2 h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded cursor-pointer"
                 />
-                Enable Azimuthal Focusing
+                Azimuthal Focusing
               </label>
             </div>
             {params.useAzimuthalFocusing && (
