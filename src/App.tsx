@@ -7,7 +7,7 @@ interface SafetyParams {
   cycles: number;
   transducerWidthCm: number;
   transducerHeightCm: number;
-  pressureKPa: number;
+  transducerPressureKPa: number;
   useElevationalFocusing: boolean;
   elevationalFocalDepthCm: number;
   useAzimuthalFocusing: boolean;
@@ -19,7 +19,7 @@ const KHZ_TO_HZ = 1e3;
 const KPA_TO_PA = 1000;
 const CM2_TO_M2 = 1e-4; // 1 cm² = 1e-4 m²
 const W_TO_MW = 1000; // 1 W = 1000 mW
-const KPA_TO_MPA = 1e-3;
+const PA_TO_MPA = 1e-6;
 const C_CONSTANT_MW_PER_CM = 40; // mW/cm constant for TIC calculation
 const SPEED_OF_SOUND_M_PER_S = 1540; // Speed of sound in tissue (m/s)
 const CM_TO_M = 0.01; // Conversion factor from cm to m
@@ -32,7 +32,7 @@ function App() {
     cycles: 2,
     transducerWidthCm: 2.87,
     transducerHeightCm: 1.33,
-    pressureKPa: 600,
+    transducerPressureKPa: 600,
     useElevationalFocusing: false,
     elevationalFocalDepthCm: 3,
     useAzimuthalFocusing: false,
@@ -75,28 +75,25 @@ function App() {
     const dutyCyclePercent =
       pulseDurationSec * (p.pulseRepetitionRateKHz * KHZ_TO_HZ) * 100;
 
-    // Step 3: Intensity calculations
-    // Convert pressure from kPa to Pa
-    let pressurePa = p.pressureKPa * KPA_TO_PA;
+    // Step 3: Calculate total focusing gain
+    let pressurePa = p.transducerPressureKPa * KPA_TO_PA;
 
     // Apply elevational focusing gain if enabled
     if (p.useElevationalFocusing) {
-      const pressureGain = calculateFocusingGain(
+      pressurePa *= calculateFocusingGain(
         p.transducerHeightCm,
         p.elevationalFocalDepthCm,
         p.frequencyMHz
       );
-      pressurePa *= pressureGain;
     }
 
     // Apply azimuthal focusing gain if enabled
     if (p.useAzimuthalFocusing) {
-      const pressureGain = calculateFocusingGain(
+      pressurePa *= calculateFocusingGain(
         p.transducerWidthCm,
         p.azimuthalFocalDepthCm,
         p.frequencyMHz
       );
-      pressurePa *= pressureGain;
     }
 
     // Calculate intensity per pulse (W/cm²)
@@ -119,28 +116,7 @@ function App() {
 
     // Step 6: Mechanical Index calculation (MI = p_min/sqrt(f))
     // Using peak negative pressure (pressure) divided by square root of frequency
-    let pressureMPa = p.pressureKPa * KPA_TO_MPA;
-
-    // Apply elevational focusing gain if enabled
-    if (p.useElevationalFocusing) {
-      const pressureGain = calculateFocusingGain(
-        p.transducerHeightCm,
-        p.elevationalFocalDepthCm,
-        p.frequencyMHz
-      );
-      pressureMPa *= pressureGain;
-    }
-
-    // Apply azimuthal focusing gain if enabled
-    if (p.useAzimuthalFocusing) {
-      const pressureGain = calculateFocusingGain(
-        p.transducerWidthCm,
-        p.azimuthalFocalDepthCm,
-        p.frequencyMHz
-      );
-      pressureMPa *= pressureGain;
-    }
-
+    const pressureMPa = pressurePa * PA_TO_MPA;
     const mechanicalIndex = pressureMPa / Math.sqrt(p.frequencyMHz);
 
     setResults({
@@ -266,8 +242,8 @@ function App() {
               </label>
               <input
                 type="number"
-                name="pressureKPa"
-                value={params.pressureKPa}
+                name="transducerPressureKPa"
+                value={params.transducerPressureKPa}
                 onChange={handleInputChange}
                 className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
               />
