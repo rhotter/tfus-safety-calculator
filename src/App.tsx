@@ -22,7 +22,7 @@ const W_TO_MW = 1000; // 1 W = 1000 mW
 const PA_TO_MPA = 1e-6;
 const C_CONSTANT_MW_PER_CM = 40; // mW/cm constant for TIC calculation
 const SPEED_OF_SOUND_M_PER_S = 1540; // Speed of sound in tissue (m/s)
-const DENSITY_KG_PER_M3 = 1000; // Density of tissue (kg/m³)
+const DENSITY_KG_PER_M3 = 1058; // Density of tissue (kg/m³)
 const IMPEDANCE_RAYL = SPEED_OF_SOUND_M_PER_S * DENSITY_KG_PER_M3;
 const CM_TO_M = 0.01; // Conversion factor from cm to m
 
