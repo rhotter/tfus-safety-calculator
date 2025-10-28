@@ -8,6 +8,10 @@ interface SafetyParams {
   transducerWidthCm: number;
   transducerHeightCm: number;
   pressureKPa: number;
+  useElevationalFocusing: boolean;
+  elevationalFocalDepthCm: number;
+  useAzimuthalFocusing: boolean;
+  azimuthalFocalDepthCm: number;
 }
 
 const MHZ_TO_HZ = 1e6;
@@ -17,15 +21,22 @@ const CM2_TO_M2 = 1e-4; // 1 cm² = 1e-4 m²
 const W_TO_MW = 1000; // 1 W = 1000 mW
 const KPA_TO_MPA = 1e-3;
 const C_CONSTANT_MW_PER_CM = 40; // mW/cm constant for TIC calculation
+const SPEED_OF_SOUND_M_PER_S = 1540; // Speed of sound in tissue (m/s)
+const CM_TO_M = 0.01; // Conversion factor from cm to m
 
 function App() {
+  // Default parameters
   const [params, setParams] = useState<SafetyParams>({
     pulseRepetitionRateKHz: 5,
     frequencyMHz: 2,
     cycles: 2,
     transducerWidthCm: 2.87,
     transducerHeightCm: 1.33,
-    pressureKPa: 500,
+    pressureKPa: 600,
+    useElevationalFocusing: false,
+    elevationalFocalDepthCm: 3,
+    useAzimuthalFocusing: false,
+    azimuthalFocalDepthCm: 3,
   });
 
   const [results, setResults] = useState({
@@ -38,6 +49,18 @@ function App() {
     tic: 0,
     mechanicalIndex: 0,
   });
+
+  const calculateFocusingGain = (
+    transducerDimensionCm: number,
+    focalDepthCm: number,
+    frequencyMHz: number
+  ): number => {
+    const wavelengthM = SPEED_OF_SOUND_M_PER_S / (frequencyMHz * MHZ_TO_HZ);
+    const transducerDimensionM = transducerDimensionCm * CM_TO_M;
+    const focalDepthM = focalDepthCm * CM_TO_M;
+    const fresnelNumber = (transducerDimensionM ** 2) / (wavelengthM * focalDepthM);
+    return Math.sqrt(fresnelNumber);
+  };
 
   const calculateResults = (p: SafetyParams) => {
     // Constants
@@ -76,8 +99,29 @@ function App() {
 
     // Step 6: Mechanical Index calculation (MI = p_min/sqrt(f))
     // Using peak negative pressure (pressure) divided by square root of frequency
-    const mechanicalIndex =
-      (p.pressureKPa * KPA_TO_MPA) / Math.sqrt(p.frequencyMHz);
+    let pressureMPa = p.pressureKPa * KPA_TO_MPA;
+
+    // Apply elevational focusing gain if enabled
+    if (p.useElevationalFocusing) {
+      const pressureGain = calculateFocusingGain(
+        p.transducerHeightCm,
+        p.elevationalFocalDepthCm,
+        p.frequencyMHz
+      );
+      pressureMPa *= pressureGain;
+    }
+
+    // Apply azimuthal focusing gain if enabled
+    if (p.useAzimuthalFocusing) {
+      const pressureGain = calculateFocusingGain(
+        p.transducerWidthCm,
+        p.azimuthalFocalDepthCm,
+        p.frequencyMHz
+      );
+      pressureMPa *= pressureGain;
+    }
+
+    const mechanicalIndex = pressureMPa / Math.sqrt(p.frequencyMHz);
 
     setResults({
       pulseDurationSec,
@@ -119,10 +163,10 @@ function App() {
   };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
+    const { name, value, type, checked } = e.target;
     setParams((prev) => ({
       ...prev,
-      [name]: parseFloat(value),
+      [name]: type === "checkbox" ? checked : parseFloat(value),
     }));
   };
 
@@ -198,7 +242,7 @@ function App() {
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700">
-                Pressure (kPa)
+                Plane Wave Pressure (kPa)
               </label>
               <input
                 type="number"
@@ -208,6 +252,66 @@ function App() {
                 className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
               />
             </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+            <div>
+              <label className="flex items-center text-sm font-medium text-gray-700 cursor-pointer">
+                <input
+                  type="checkbox"
+                  name="useElevationalFocusing"
+                  checked={params.useElevationalFocusing}
+                  onChange={handleInputChange}
+                  className="mr-2 h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded cursor-pointer"
+                />
+                Enable Elevational Focusing
+              </label>
+            </div>
+            {params.useElevationalFocusing && (
+              <div>
+                <label className="block text-sm font-medium text-gray-700">
+                  Elevational Focal Depth (cm)
+                </label>
+                <input
+                  type="number"
+                  name="elevationalFocalDepthCm"
+                  value={params.elevationalFocalDepthCm}
+                  onChange={handleInputChange}
+                  step="0.1"
+                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                />
+              </div>
+            )}
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+            <div>
+              <label className="flex items-center text-sm font-medium text-gray-700 cursor-pointer">
+                <input
+                  type="checkbox"
+                  name="useAzimuthalFocusing"
+                  checked={params.useAzimuthalFocusing}
+                  onChange={handleInputChange}
+                  className="mr-2 h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded cursor-pointer"
+                />
+                Enable Azimuthal Focusing
+              </label>
+            </div>
+            {params.useAzimuthalFocusing && (
+              <div>
+                <label className="block text-sm font-medium text-gray-700">
+                  Azimuthal Focal Depth (cm)
+                </label>
+                <input
+                  type="number"
+                  name="azimuthalFocalDepthCm"
+                  value={params.azimuthalFocalDepthCm}
+                  onChange={handleInputChange}
+                  step="0.1"
+                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                />
+              </div>
+            )}
           </div>
         </div>
 
