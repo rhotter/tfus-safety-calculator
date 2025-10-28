@@ -77,7 +77,27 @@ function App() {
 
     // Step 3: Intensity calculations
     // Convert pressure from kPa to Pa
-    const pressurePa = p.pressureKPa * KPA_TO_PA;
+    let pressurePa = p.pressureKPa * KPA_TO_PA;
+
+    // Apply elevational focusing gain if enabled
+    if (p.useElevationalFocusing) {
+      const pressureGain = calculateFocusingGain(
+        p.transducerHeightCm,
+        p.elevationalFocalDepthCm,
+        p.frequencyMHz
+      );
+      pressurePa *= pressureGain;
+    }
+
+    // Apply azimuthal focusing gain if enabled
+    if (p.useAzimuthalFocusing) {
+      const pressureGain = calculateFocusingGain(
+        p.transducerWidthCm,
+        p.azimuthalFocalDepthCm,
+        p.frequencyMHz
+      );
+      pressurePa *= pressureGain;
+    }
 
     // Calculate intensity per pulse (W/cm²)
     const intensityPerPulseWPerCm2 =
