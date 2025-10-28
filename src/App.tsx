@@ -41,7 +41,7 @@ function App() {
 
   const [results, setResults] = useState({
     pulseDurationSec: 0,
-    dutyCyclePercent: 0,
+    dutyCycle: 0,
     intensityPerPulseWPerCm2: 0,
     averageIntensityMWPerCm2: 0,
     transducerAreaCm2: 0,
@@ -62,25 +62,56 @@ function App() {
     return Math.sqrt(fresnelNumber);
   };
 
+  const calculateIntensity = (pressurePa: number, impedanceRayl: number): number => {
+    return ((pressurePa * pressurePa) / (2 * impedanceRayl)) * CM2_TO_M2;
+  };
+
+  const calculateAverageIntensity = (intensityPerPulseWPerCm2: number, dutyCycle: number): number => {
+    return (intensityPerPulseWPerCm2 * dutyCycle) * W_TO_MW;
+  };
+
+  const calculateThermalIndex = (
+    transducerWidthCm: number,
+    transducerHeightCm: number,
+    transducerAverageIntensityMWPerCm2: number
+  ): number => {
+    const transducerAreaCm2 = transducerWidthCm * transducerHeightCm;
+    const transducerPowerMW = transducerAverageIntensityMWPerCm2 * transducerAreaCm2;
+    const equivalentDiameterCm = 2 * Math.sqrt((transducerWidthCm * transducerHeightCm) / Math.PI);
+    return transducerPowerMW / (C_CONSTANT_MW_PER_CM * equivalentDiameterCm);
+  };
+
+  const calculateMechanicalIndex = (brainPressurePa: number, frequencyMHz: number): number => {
+    const brainPressureMPa = brainPressurePa * PA_TO_MPA;
+    return brainPressureMPa / Math.sqrt(frequencyMHz);
+  };
+
   const calculateResults = (p: SafetyParams) => {
     // Constants
     const speedOfSoundMPerS = 1500;
     const densityKgPerM3 = 1000;
     const impedanceRayl = speedOfSoundMPerS * densityKgPerM3;
 
-    // Step 1: Pulse duration (in seconds)
+    // Step 1: Pulse duration
     const pulseDurationSec = p.cycles / (p.frequencyMHz * MHZ_TO_HZ);
 
-    // Step 2: Duty cycle (as percentage)
-    const dutyCyclePercent =
-      pulseDurationSec * (p.pulseRepetitionRateKHz * KHZ_TO_HZ) * 100;
+    // Step 2: Duty cycle (fraction between 0 and 1)
+    const dutyCycle = pulseDurationSec * (p.pulseRepetitionRateKHz * KHZ_TO_HZ);
 
-    // Step 3: Calculate total focusing gain
-    let pressurePa = p.transducerPressureKPa * KPA_TO_PA;
+    // Step 3: Calculate transducer intensity
+    const transducerPressurePa = p.transducerPressureKPa * KPA_TO_PA;
+    const transducerIntensityPerPulseWPerCm2 = calculateIntensity(transducerPressurePa, impedanceRayl);
+    const transducerAverageIntensityMWPerCm2 = calculateAverageIntensity(
+      transducerIntensityPerPulseWPerCm2,
+      dutyCycle
+    );
+
+    // Step 4: Calculate brain pressure and intensity (with focusing)
+    let brainPressurePa = transducerPressurePa;
 
     // Apply elevational focusing gain if enabled
     if (p.useElevationalFocusing) {
-      pressurePa *= calculateFocusingGain(
+      brainPressurePa *= calculateFocusingGain(
         p.transducerHeightCm,
         p.elevationalFocalDepthCm,
         p.frequencyMHz
@@ -89,41 +120,39 @@ function App() {
 
     // Apply azimuthal focusing gain if enabled
     if (p.useAzimuthalFocusing) {
-      pressurePa *= calculateFocusingGain(
+      brainPressurePa *= calculateFocusingGain(
         p.transducerWidthCm,
         p.azimuthalFocalDepthCm,
         p.frequencyMHz
       );
     }
 
-    // Calculate intensity per pulse (W/cm²)
-    const intensityPerPulseWPerCm2 =
-      ((pressurePa * pressurePa) / (2 * impedanceRayl)) * CM2_TO_M2;
+    // Calculate brain intensity
+    const brainIntensityPerPulseWPerCm2 = calculateIntensity(brainPressurePa, impedanceRayl);
+    const brainAverageIntensityMWPerCm2 = calculateAverageIntensity(
+      brainIntensityPerPulseWPerCm2,
+      dutyCycle
+    );
 
-    // Calculate average intensity (mW/cm²)
-    const averageIntensityMWPerCm2 =
-      ((intensityPerPulseWPerCm2 * dutyCyclePercent) / 100) * W_TO_MW;
 
-    // Step 4: Transducer calculations
+    // Step 5: Calculate mechanical index
+    const mechanicalIndex = calculateMechanicalIndex(brainPressurePa, p.frequencyMHz);
+
+    // Step 6: Calculate thermal index (TIC)
     const transducerAreaCm2 = p.transducerWidthCm * p.transducerHeightCm;
-    const transducerPowerMW = averageIntensityMWPerCm2 * transducerAreaCm2;
+    const transducerPowerMW = transducerAverageIntensityMWPerCm2 * transducerAreaCm2;
 
-    // Step 5: TIC calculation
-    const equivalentDiameterCm =
-      2 * Math.sqrt((p.transducerWidthCm * p.transducerHeightCm) / Math.PI);
-    const tic =
-      transducerPowerMW / (C_CONSTANT_MW_PER_CM * equivalentDiameterCm);
-
-    // Step 6: Mechanical Index calculation (MI = p_min/sqrt(f))
-    // Using peak negative pressure (pressure) divided by square root of frequency
-    const pressureMPa = pressurePa * PA_TO_MPA;
-    const mechanicalIndex = pressureMPa / Math.sqrt(p.frequencyMHz);
+    const tic = calculateThermalIndex(
+      p.transducerWidthCm,
+      p.transducerHeightCm,
+      transducerAverageIntensityMWPerCm2
+    );
 
     setResults({
       pulseDurationSec,
-      dutyCyclePercent,
-      intensityPerPulseWPerCm2,
-      averageIntensityMWPerCm2,
+      dutyCycle,
+      intensityPerPulseWPerCm2: brainIntensityPerPulseWPerCm2,
+      averageIntensityMWPerCm2: brainAverageIntensityMWPerCm2,
       transducerAreaCm2,
       transducerPowerMW,
       tic,
