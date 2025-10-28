@@ -1,5 +1,34 @@
 # Transcrnial Ultrasound Safety Calculator
 
+## Getting Started
+
+### Installation
+
+1. Clone the repository:
+
+```bash
+git clone <repository-url>
+cd tfus-safety-calculator
+```
+
+2. Install dependencies:
+
+```bash
+npm install
+```
+
+### Running the Application
+
+Start the development server:
+
+```bash
+npm run dev
+```
+
+The application will be available at `http://localhost:5173` (or another port if 5173 is in use).
+
+## Ultrasound Safety
+
 Ultrasound at low power is safe and has been used in imaging since the mid 90s for fetuses, brains, hearts, etc.
 
 But at high ultrasound power, one needs to be careful. There are two ways ultrasound can damage tissue:
