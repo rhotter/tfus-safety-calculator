@@ -49,6 +49,7 @@ function App() {
     transducerAveragePowerMW: 0,
     tic: 0,
     mechanicalIndex: 0,
+    brainPressureKPa: 0,
   });
 
   const calculateFocusingGain = (
@@ -180,6 +181,7 @@ function App() {
 
     const transducerAreaCm2 = p.transducerWidthCm * p.transducerHeightCm;
     const transducerAveragePowerMW = transducerAverageIntensityMWPerCm2 * transducerAreaCm2;
+    const brainPressureKPa = brainPressurePa / KPA_TO_PA;
 
     setResults({
       pulseDurationSec,
@@ -189,6 +191,7 @@ function App() {
       transducerAveragePowerMW,
       tic,
       mechanicalIndex,
+      brainPressureKPa,
     });
   };
 
@@ -381,6 +384,12 @@ function App() {
                 <span className="font-medium text-gray-700">Transducer Average Power: </span>
                 <span className="text-gray-900">{results.transducerAveragePowerMW.toFixed(2)} mW</span>
               </div>
+              {(params.useElevationalFocusing || params.useAzimuthalFocusing) && (
+                <div>
+                  <span className="font-medium text-gray-700">Pressure at Focus: </span>
+                  <span className="text-gray-900">{(results.brainPressureKPa / KPA_TO_PA).toFixed(1)} MPa</span>
+                </div>
+              )}
             </div>
           </div>
         </div>
