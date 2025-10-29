@@ -46,6 +46,7 @@ function App() {
     dutyCycle: 0,
     intensityPerPulseWPerCm2: 0,
     averageIntensityMWPerCm2: 0,
+    transducerAveragePowerMW: 0,
     tic: 0,
     mechanicalIndex: 0,
   });
@@ -177,11 +178,15 @@ function App() {
       p.azimuthalFocalDepthCm
     );
 
+    const transducerAreaCm2 = p.transducerWidthCm * p.transducerHeightCm;
+    const transducerAveragePowerMW = transducerAverageIntensityMWPerCm2 * transducerAreaCm2;
+
     setResults({
       pulseDurationSec,
       dutyCycle,
       intensityPerPulseWPerCm2: brainIntensityPerPulseWPerCm2,
       averageIntensityMWPerCm2: brainAverageIntensityMWPerCm2,
+      transducerAveragePowerMW,
       tic,
       mechanicalIndex,
     });
@@ -364,6 +369,19 @@ function App() {
                 />
               </div>
             )}
+          </div>
+
+          <div className="mt-6 pt-4 border-t border-gray-200">
+            <div className="space-y-2 text-sm">
+              <div>
+                <span className="font-medium text-gray-700">Duty Cycle: </span>
+                <span className="text-gray-900">{(results.dutyCycle * 100).toFixed(2)}%</span>
+              </div>
+              <div>
+                <span className="font-medium text-gray-700">Transducer Average Power: </span>
+                <span className="text-gray-900">{results.transducerAveragePowerMW.toFixed(2)} mW</span>
+              </div>
+            </div>
           </div>
         </div>
 
