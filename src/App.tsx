@@ -387,7 +387,7 @@ function App() {
               {(params.useElevationalFocusing || params.useAzimuthalFocusing) && (
                 <div>
                   <span className="font-medium text-gray-700">Pressure at Focus: </span>
-                  <span className="text-gray-900">{(results.brainPressureKPa / KPA_TO_PA).toFixed(1)} MPa</span>
+                  <span className="text-gray-900">{(results.brainPressureKPa / KPA_TO_PA).toFixed(2)} MPa</span>
                 </div>
               )}
             </div>
