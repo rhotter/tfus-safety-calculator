@@ -391,7 +391,7 @@ function App() {
           <div className="space-y-6">
             <div className="border-b pb-4">
               <h3 className="text-lg font-medium mb-2">
-                Mechanical Index Check
+                Mechanical Index (MI) Check
               </h3>
               <div className="flex items-center">
                 {results.mechanicalIndex < 1.9 ? (
@@ -404,7 +404,7 @@ function App() {
             </div>
 
             <div className="border-b pb-4">
-              <h3 className="text-lg font-medium mb-2">Peak Intensity Check</h3>
+              <h3 className="text-lg font-medium mb-2">Peak Intensity Check (ISPPA)</h3>
               <div className="flex items-center">
                 {results.intensityPerPulseWPerCm2 < 190 ? (
                   <CheckCircle className="text-green-500 w-6 h-6 mr-2" />
@@ -420,7 +420,7 @@ function App() {
 
             <div className="border-b pb-4">
               <h3 className="text-lg font-medium mb-2">
-                Average Intensity Check
+                Average Intensity Check (ISPTA)
               </h3>
               <div className="flex items-center">
                 {results.averageIntensityMWPerCm2 < 720 ? (
