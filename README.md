@@ -1,17 +1,11 @@
 # Transcrnial Ultrasound Safety Calculator
+See below for a primer on ultrasound safety.
 
 ## Getting Started
 
 ### Installation
 
-1. Clone the repository:
-
-```bash
-git clone <repository-url>
-cd tfus-safety-calculator
-```
-
-2. Install dependencies:
+Install dependencies:
 
 ```bash
 npm install
