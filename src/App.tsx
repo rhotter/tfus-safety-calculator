@@ -385,7 +385,7 @@ function App() {
               </summary>
               <div className="mt-2 pt-2 flex items-center gap-2">
                 <label className="text-xs font-medium text-gray-600">
-                  Skull Thickness (cm)
+                  Skull Thickness for Thermal Index (cm)
                 </label>
                 <input
                   type="number"
