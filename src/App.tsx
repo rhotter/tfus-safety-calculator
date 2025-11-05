@@ -381,7 +381,7 @@ function App() {
           <div className="mt-6 pt-4 border-t border-gray-200">
             <details className="text-xs text-gray-600 mb-4">
               <summary className="cursor-pointer font-medium text-gray-700 mb-2">
-                Advanced Settings
+                Additional Settings
               </summary>
               <div className="mt-2 pt-2 flex items-center gap-2">
                 <label className="text-xs font-medium text-gray-600">
