@@ -12,7 +12,6 @@ interface SafetyParams {
   elevationalFocalDepthCm: number;
   useAzimuthalFocusing: boolean;
   azimuthalFocalDepthCm: number;
-  skullThicknessCm: number;
 }
 
 const MHZ_TO_HZ = 1e6;
@@ -40,7 +39,6 @@ function App() {
     elevationalFocalDepthCm: 3,
     useAzimuthalFocusing: false,
     azimuthalFocalDepthCm: 3,
-    skullThicknessCm: 1,
   });
 
   const [results, setResults] = useState({
@@ -76,52 +74,22 @@ function App() {
 
   const calculateBeamAreaAtSkull = (
     transducerWidthCm: number,
-    transducerHeightCm: number,
-    useElevationalFocusing: boolean,
-    elevationalFocalDepthCm: number,
-    useAzimuthalFocusing: boolean,
-    azimuthalFocalDepthCm: number,
-    skullThicknessCm: number
+    transducerHeightCm: number
   ): number => {
-    if (skullThicknessCm / elevationalFocalDepthCm < 0 || skullThicknessCm / azimuthalFocalDepthCm < 0) {
-      throw new Error("Focal depth is too shallow. TODO: Implement diffraction-limited focusing.");
-    }
-
-    let areaFactor = 1;
-    // Apply elevational focusing (affects height)
-    if (useElevationalFocusing) {
-      areaFactor *= (1 - skullThicknessCm / elevationalFocalDepthCm);
-    }
-
-    // Apply azimuthal focusing (affects width)
-    if (useAzimuthalFocusing) {
-      areaFactor *= (1 - skullThicknessCm / azimuthalFocalDepthCm);
-    }
-
-    return transducerWidthCm * transducerHeightCm * areaFactor;
+    return transducerWidthCm * transducerHeightCm;
   };
 
   const calculateThermalIndex = (
     transducerWidthCm: number,
     transducerHeightCm: number,
-    transducerAverageIntensityMWPerCm2: number,
-    useElevationalFocusing: boolean,
-    elevationalFocalDepthCm: number,
-    useAzimuthalFocusing: boolean,
-    azimuthalFocalDepthCm: number,
-    skullThicknessCm: number
+    transducerAverageIntensityMWPerCm2: number
   ): number => {
     const transducerAreaCm2 = transducerWidthCm * transducerHeightCm;
     const transducerPowerMW = transducerAverageIntensityMWPerCm2 * transducerAreaCm2;
 
     const beamAreaAtSkullCm2 = calculateBeamAreaAtSkull(
       transducerWidthCm,
-      transducerHeightCm,
-      useElevationalFocusing,
-      elevationalFocalDepthCm,
-      useAzimuthalFocusing,
-      azimuthalFocalDepthCm,
-      skullThicknessCm
+      transducerHeightCm
     );
 
     const equivalentDiameterCm = 2 * Math.sqrt(beamAreaAtSkullCm2 / Math.PI);
@@ -175,12 +143,7 @@ function App() {
     const tic = calculateThermalIndex(
       p.transducerWidthCm,
       p.transducerHeightCm,
-      transducerAverageIntensityMWPerCm2,
-      p.useElevationalFocusing,
-      p.elevationalFocalDepthCm,
-      p.useAzimuthalFocusing,
-      p.azimuthalFocalDepthCm,
-      p.skullThicknessCm
+      transducerAverageIntensityMWPerCm2
     );
 
     const transducerAreaCm2 = p.transducerWidthCm * p.transducerHeightCm;
@@ -379,24 +342,6 @@ function App() {
           </div>
 
           <div className="mt-6 pt-4 border-t border-gray-200">
-            <details className="text-xs text-gray-600 mb-4">
-              <summary className="cursor-pointer font-medium text-gray-700 mb-2">
-                Additional Settings
-              </summary>
-              <div className="mt-2 pt-2 flex items-center gap-2">
-                <label className="text-xs font-medium text-gray-600">
-                  Skull Thickness for Thermal Index (cm)
-                </label>
-                <input
-                  type="number"
-                  name="skullThicknessCm"
-                  value={params.skullThicknessCm}
-                  onChange={handleInputChange}
-                  step="0.1"
-                  className="w-16 px-2 py-0 h-6 rounded border border-gray-300 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 text-xs"
-                />
-              </div>
-            </details>
             <div className="space-y-2 text-sm">
               <div>
                 <span className="font-medium text-gray-700">Duty Cycle: </span>
