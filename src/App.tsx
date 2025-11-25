@@ -411,7 +411,7 @@ function App() {
                   <AlertTriangle className="text-red-500 w-6 h-6 mr-2" />
                 )}
                 <span>
-                  {results.tic.toFixed(2)}°C (iTRUST Limit: 6°C)
+                  {results.tic.toFixed(2)}°C (ITRUSST Limit: 6°C)
                 </span>
               </div>
 
