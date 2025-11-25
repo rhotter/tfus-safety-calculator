@@ -166,17 +166,6 @@ function App() {
     calculateResults(params);
   }, [params]);
 
-  const getMaxExposureTime = (tic: number) => {
-    // BMUS limits
-    if (tic <= 0.7) return Infinity;
-    if (tic <= 1) return 60;
-    if (tic <= 1.5) return 30;
-    if (tic <= 2) return 15;
-    if (tic <= 2.5) return 4;
-    if (tic <= 3) return 1;
-    return 0;
-  };
-
   const getITRUSSTMaxExposureTime = (tic: number) => {
     // ITRUSST limits
     if (tic <= 1.5) return Infinity;
@@ -416,29 +405,22 @@ function App() {
                 Thermal Index (TIC) Check
               </h3>
               <div className="flex items-center mb-2">
-                {results.tic < 3 ? (
+                {results.tic < 6 ? (
                   <CheckCircle className="text-green-500 w-6 h-6 mr-2" />
                 ) : (
                   <AlertTriangle className="text-red-500 w-6 h-6 mr-2" />
                 )}
                 <span>
-                  {results.tic.toFixed(2)}°C (BMUS Limit: 3°C, ITRUSST Limit:
-                  6°C)
+                  {results.tic.toFixed(2)}°C (iTRUST Limit: 6°C)
                 </span>
               </div>
 
-              <div className="!bg-red-50 p-4 rounded-lg">
-                <div className="flex items-center mb-2">
-                  <Info className="text-red-600 w-5 h-5 mr-2" />
-                  <span className="text-red-600 font-medium">
-                    Maximum Exposure Times
+              <div className="!bg-orange-50 p-3 rounded-lg mt-3">
+                <div className="flex items-center">
+                  <Info className="text-orange-600 w-5 h-5 mr-2" />
+                  <span className="text-gray-700">
+                    Maximum Exposure Time: <span className="font-medium">{getITRUSSTMaxExposureTime(results.tic)} minutes</span>
                   </span>
-                </div>
-                <div className="ml-7 space-y-1">
-                  <p>BMUS: {getMaxExposureTime(results.tic)} minutes</p>
-                  <p>
-                    ITRUSST: {getITRUSSTMaxExposureTime(results.tic)} minutes
-                  </p>
                 </div>
               </div>
             </div>
